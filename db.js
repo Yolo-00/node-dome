@@ -10,6 +10,7 @@ const db = mysql.createPool({
   connectionLimit: 10, // 最大连接数
   queueLimit: 0, // 队列长度，0 表示没有限制
   // timezone: "+08:00", // 设置为本地时区
+  dateStrings : true //解决时间格式
 });
 
 const promisePool = db.promise();

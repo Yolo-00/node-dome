@@ -221,7 +221,7 @@ router.get("/get_user_list", async (ctx) => {
     // 查询用户列表
     const [users] = await promisePool.query(query, params);
 
-    console.log(users);    
+    console.log(users);
     return (ctx.body = {
       code: 200,
       data: {
@@ -234,6 +234,64 @@ router.get("/get_user_list", async (ctx) => {
   } catch (error) {
     console.log(error);
   }
+});
+
+router.put("/updatePassWord", async (ctx) => {
+  const { username, password, newPassword } = ctx.request.body;
+  if (!username) {
+    return (ctx.body = {
+      code: 1,
+      msg: "用户名不能为空",
+    });
+  }
+  if (!password) {
+    return (ctx.body = {
+      code: 1,
+      msg: "密码不能为空",
+    });
+  }
+  if (!newPassword) {
+    return (ctx.body = {
+      code: 1,
+      msg: "新密码不能为空",
+    });
+  }
+
+  // 查找用户
+  const [users] = await promisePool.query(
+    "SELECT * FROM users WHERE username = ?",
+    [username]
+  );
+
+  if (users.length === 0) {
+    return (ctx.body = {
+      code: 1,
+      msg: "用户不存在",
+    });
+  }
+  const user = users[0];
+  console.log(users, ">>>");
+  // 验证密码
+  const validPassword = await bcrypt.compare(password, user.password_hash);
+
+  if (!validPassword) {
+    return (ctx.body = {
+      code: 1,
+      msg: "密码错误",
+    });
+  }
+  // 哈希用户密码
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  try {
+    await promisePool.query("UPDATE users SET password_hash = ? WHERE id = ?", [
+      passwordHash,
+      user.id,
+    ]);
+    return (ctx.body = {
+      code: 200,
+      msg: "修改成功",
+    });
+  } catch (error) {}
 });
 
 app.use(router.routes()).use(router.allowedMethods());
